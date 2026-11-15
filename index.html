@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellaris Study - Dream Sanctuary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #160d26;
+            --bg-card: #221538;
+            --bg-card-hover: #2b1c47;
+            --accent-purple: #9d73f5;
+            --accent-pink: #f573c4;
+            --accent-gold: #ffd750;
+            --text-light: #f3f0ff;
+            --text-dim: #ab9ec9;
+            --border-pixel: 3px solid #483375;
+            --shadow-pixel: 6px 6px 0px #0b0514;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 20% 30%, #301b57 0%, transparent 40%),
+                              radial-gradient(circle at 80% 70%, #291342 0%, transparent 50%);
+        }
+
+        /* Scanline Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 38, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Top Navigation Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2.5rem;
+            background: var(--bg-card);
+            border-bottom: var(--border-pixel);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+
+        .brand h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0px #5c4113;
+        }
+
+        nav {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .nav-btn {
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            color: var(--text-dim);
+            padding: 0.5rem 1rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #0b0514;
+            transition: all 0.1s ease;
+        }
+
+        .nav-btn.active, .nav-btn:hover {
+            background: var(--accent-purple);
+            color: white;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #0b0514;
+        }
+
+        /* Main Workspace Container */
+        main {
+            flex: 1;
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .view-section.active {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .view-section.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pixel Cards */
+        .pixel-card {
+            background: var(--bg-card);
+            border: var(--border-pixel);
+            box-shadow: var(--shadow-pixel);
+            padding: 1.75rem;
+            position: relative;
+        }
+
+        .pixel-card h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-pink);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* --- VIEW 1: TIMER & TAMAGOTCHI CAT --- */
+        .timer-display-box {
+            text-align: center;
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 0 15px rgba(157, 115, 245, 0.1);
+        }
+
+        .timer-time {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+            text-shadow: 3px 3px 0px #5c4113;
+            margin-bottom: 0.5rem;
+        }
+
+        .timer-status {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .timer-presets {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .pixel-btn {
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            color: var(--text-light);
+            padding: 0.6rem 1rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #0b0514;
+            transition: all 0.1s;
+        }
+
+        .pixel-btn:hover, .pixel-btn.active {
+            background: var(--accent-pink);
+            border-color: #ff9ee2;
+            color: #fff;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #0b0514;
+        }
+
+        .pixel-btn.primary {
+            background: var(--accent-purple);
+            color: white;
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 0.65rem;
+        }
+
+        .pixel-btn.primary:hover {
+            background: #b18ff8;
+        }
+
+        /* Tamagotchi Cat Container */
+        .tamagotchi-container {
+            background: var(--bg-deep);
+            border: var(--border-pixel);
+            box-shadow: var(--shadow-pixel);
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tamagotchi-screen {
+            background: linear-gradient(135deg, #281e3d, #1a122e);
+            border: 3px inset #483375;
+            height: 200px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        /* Running Cat GIF Frame / Animation */
+        .cat-runner {
+            width: 96px;
+            height: 96px;
+            image-rendering: pixelated;
+            margin-bottom: 0.5rem;
+        }
+
+        .running-track {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-purple);
+            opacity: 0.4;
+        }
+
+        .pet-stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.75rem;
+            font-family: 'Press Start 2P', monospace;
+            color: var(--accent-gold);
+        }
+
+        /* --- VIEW 2: STUDY QUESTS (TASKS) --- */
+        .task-input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .pixel-input {
+            flex: 1;
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            color: var(--text-light);
+            padding: 0.75rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem;
+            box-shadow: inset 2px 2px 0px #0b0514;
+        }
+
+        .pixel-input:focus {
+            outline: none;
+            border-color: var(--accent-pink);
+        }
+
+        .task-list {
+            list-style: none;
+            max-height: 380px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding-right: 0.5rem;
+        }
+
+        .task-item {
+            background: var(--bg-deep);
+            border: 2px solid #3d2b63;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 3px 3px 0px #0b0514;
+            transition: all 0.2s;
+        }
+
+        .task-item.completed {
+            opacity: 0.5;
+            text-decoration: line-through;
+            border-color: #271a3d;
+        }
+
+        .task-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pixel-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-purple);
+            cursor: pointer;
+        }
+
+        .task-tag {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            background: #332052;
+            color: var(--accent-pink);
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--accent-purple);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .delete-btn:hover { color: #ff7373; }
+
+        /* --- VIEW 3: NOTES & TAROT FLASHCARDS --- */
+        .notes-area {
+            width: 100%;
+            height: 350px;
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            color: var(--text-light);
+            padding: 1.25rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            resize: none;
+            box-shadow: inset 2px 2px 0px #0b0514;
+            line-height: 1.6;
+        }
+
+        .tarot-card-box {
+            background: var(--bg-deep);
+            border: 3px solid var(--accent-gold);
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 5px 5px 0px #0b0514;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        .tarot-question {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.65rem;
+            color: var(--accent-pink);
+            margin-bottom: 1rem;
+        }
+
+        .tarot-content {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .tarot-hint {
+            position: absolute;
+            bottom: 0.75rem;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            color: var(--text-dim);
+        }
+
+        /* --- VIEW 4: MOON SANCTUARY & GIFS --- */
+        .sanctuary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .moon-display-card {
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .moon-gif-img {
+            width: 160px;
+            height: 160px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+            image-rendering: pixelated;
+        }
+
+        .shooting-stars-box {
+            background: var(--bg-deep);
+            border: 2px solid var(--accent-purple);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .shooting-stars-img {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            margin-bottom: 1rem;
+            image-rendering: pixelated;
+        }
+
+        /* Persistent Bottom Bar */
+        footer {
+            margin-top: auto;
+            background: var(--bg-card);
+            border-top: var(--border-pixel);
+            padding: 0.85rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.55rem;
+            color: var(--text-dim);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-gold);
+            box-shadow: 0 0 8px var(--accent-gold);
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @media (max-width: 900px) {
+            .view-section.active, .sanctuary-grid {
+                grid-template-columns: 1fr;
+            }
+            header { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand">
+            <!-- Using user provided cat/pixel animation asset -->
+            <img src="1000452702.gif" alt="Moon Icon" class="brand-icon">
+            <h1>STELLARIS STUDY</h1>
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="switchView('timer')">TIMER & CAT</button>
+            <button class="nav-btn" onclick="switchView('quests')">QUESTS</button>
+            <button class="nav-btn" onclick="switchView('notes')">NOTES & TAROT</button>
+            <button class="nav-btn" onclick="switchView('sanctuary')">MOON SANCTUARY</button>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- VIEW 1: TIMER & TAMAGOTCHI CAT RUNNER -->
+        <section id="view-timer" class="view-section active">
+            <div class="pixel-card">
+                <h2>⭐ FOCUS ORACLE TIMER</h2>
+                <div class="timer-display-box">
+                    <div class="timer-time" id="timerDisplay">25:00</div>
+                    <div class="timer-status" id="timerStatusText">Ready to begin study quest</div>
+                </div>
+                <div class="timer-presets">
+                    <button class="pixel-btn active" onclick="setTimer(25)">25 MIN</button>
+                    <button class="pixel-btn" onclick="setTimer(10)">10 MIN</button>
+                    <button class="pixel-btn" onclick="setTimer(5)">5 MIN BREAK</button>
+                </div>
+                <button class="pixel-btn primary" id="timerToggleBtn" onclick="toggleTimer()">START FOCUS SESSION</button>
+            </div>
+
+            <div class="tamagotchi-container">
+                <h2 style="font-family: 'Press Start 2P', monospace; font-size: 0.7rem; color: var(--accent-gold); margin-bottom: 1rem;">PET COMPANION (ACTIVE WHILE TIMER RUNS)</h2>
+                <div class="tamagotchi-screen">
+                    <!-- User provided cat running GIF asset -->
+                    <img src="1000452702.gif" alt="Running Cat" class="cat-runner" id="catRunner">
+                    <div id="catStatusText" style="font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: var(--accent-pink);">Zzz... Waiting to run</div>
+                    <div class="running-track"></div>
+                </div>
+                <div class="pet-stats">
+                    <span>LEVEL: 1</span>
+                    <span>FOCUS EXP: <span id="expCount">0</span></span>
+                    <span>MOOD: ✨ DREAMY</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: STUDY QUESTS (TASKS) -->
+        <section id="view-quests" class="view-section full-width">
+            <div class="pixel-card">
+                <h2>📜 ASTRAL STUDY QUESTS</h2>
+                <div class="task-input-row">
+                    <input type="text" class="pixel-input" id="taskInput" placeholder="Enter new quest or spell study...">
+                    <select class="pixel-input" id="subjectSelect" style="flex: 0 0 160px;">
+                        <option value="Astronomy">Astronomy</option>
+                        <option value="Arcana">Arcana</option>
+                        <option value="Logic">Logic</option>
+                        <option value="Runes">Runes</option>
+                    </select>
+                    <button class="pixel-btn primary" style="width: auto; padding: 0.75rem 1.5rem;" onclick="addTask()">ADD QUEST</button>
+                </div>
+                <ul class="task-list" id="taskList">
+                    <!-- Dynamic Quests -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- VIEW 3: NOTES & TAROT FLASHCARDS -->
+        <section id="view-notes" class="view-section">
+            <div class="pixel-card">
+                <h2>🔮 SCROLL SCRATCHPAD</h2>
+                <textarea class="notes-area" id="scratchpad" placeholder="Record your cosmic notes and study spells here... (Auto-saves)"></textarea>
+            </div>
+
+            <div class="pixel-card">
+                <h2>🃏 TAROT FLASHCARDS</h2>
+                <div class="tarot-card-box" onclick="flipTarotCard()">
+                    <div class="tarot-question" id="tarotPrompt">QUESTION I</div>
+                    <div class="tarot-content" id="tarotText">What is the core principle of stellar quantum superposition?</div>
+                    <div class="tarot-hint">[ CLICK TO REVEAL WISDOM ]</div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="pixel-btn" style="flex: 1;" onclick="prevTarot()">PREV CARD</button>
+                    <button class="pixel-btn primary" style="flex: 1;" onclick="nextTarot()">NEXT CARD</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: MOON SANCTUARY & GIFS -->
+        <section id="view-sanctuary" class="view-section full-width">
+            <div class="pixel-card">
+                <h2>🌙 MOON & STELLAR SANCTUARY</h2>
+                <div class="sanctuary-grid">
+                    <div class="moon-display-card">
+                        <!-- User provided moon/star gif asset -->
+                        <img src="1000452702.gif" alt="Moon & Stars" class="moon-gif-img">
+                        <h3 style="font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--accent-gold); margin-bottom: 0.5rem;">CELESTIAL LUNAR PHASE</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-dim);">Imbued with peaceful purple twilight energy to guide your late-night study sessions.</p>
+                    </div>
+                    <div class="shooting-stars-box">
+                        <!-- User provided shooting stars image asset -->
+                        <img src="1000452701.jpg" alt="Shooting Stars" class="shooting-stars-img">
+                        <h3 style="font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--accent-pink); margin-bottom: 0.5rem;">FALLING STARSTREAM</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-dim);">Make a wish upon every completed study milestone and watch your focus streak soar.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Bar -->
+    <footer>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="footerStatus">Stellaris Sanctuary Online • Ready</span>
+        </div>
+        <div>✦ DREAMY PURPLE PIXEL STUDY COMPANION ✦</div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- VIEW SWITCHING ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('view-' + viewId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // --- TIMER & CAT RUNNER SYNC ---
+        let totalSeconds = 25 * 60;
+        let currentTime = totalSeconds;
+        let timerInterval = null;
+        let isRunning = false;
+        let focusExp = 0;
+
+        function setTimer(mins) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            totalSeconds = mins * 60;
+            currentTime = totalSeconds;
+            updateTimerDisplay();
+            document.getElementById('timerToggleBtn').innerText = "START FOCUS SESSION";
+            document.getElementById('timerStatusText').innerText = "Ready to begin study quest";
+            document.getElementById('catStatusText').innerText = "Zzz... Waiting to run";
+            
+            document.querySelectorAll('.timer-presets .pixel-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(currentTime / 60).toString().padStart(2, '0');
+            const s = (currentTime % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timerToggleBtn');
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                btn.innerText = "RESUME FOCUS SESSION";
+                document.getElementById('timerStatusText').innerText = "Session paused";
+                document.getElementById('catStatusText').innerText = "Cat resting...";
+                document.getElementById('footerStatus').innerText = "Session paused";
+            } else {
+                isRunning = true;
+                btn.innerText = "PAUSE FOCUS SESSION";
+                document.getElementById('timerStatusText').innerText = "Focus session in progress ✨";
+                document.getElementById('catStatusText').innerText = "🐾 Cat running on starlight track!";
+                document.getElementById('footerStatus').innerText = "Focus session active • Cat running";
+
+                timerInterval = setInterval(() => {
+                    if (currentTime > 0) {
+                        currentTime--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        alert("✨ Quest Complete! You earned +50 Focus EXP!");
+                        focusExp += 50;
+                        document.getElementById('expCount').innerText = focusExp;
+                        btn.innerText = "START FOCUS SESSION";
+                        document.getElementById('catStatusText').innerText = "Victory celebration! 🎉";
+                        document.getElementById('footerStatus').innerText = "Quest completed successfully";
+                    }
+                }, 1000);
+            }
+        }
+
+        // --- QUESTS / TASK MANAGER ---
+        let tasks = [
+            { id: 1, text: "Calculate stellar parallax equations", subject: "Astronomy", completed: true },
+            { id: 2, text: "Review tarot and arcana symbolism notes", subject: "Arcana", completed: false },
+            { id: 3, text: "Complete nocturnal rune memory deck", subject: "Runes", completed: false }
+        ];
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            tasks.forEach(t => {
+                const li = document.createElement('li');
+                li.className = `task-item ${t.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <div class="task-left">
+                        <input type="checkbox" class="pixel-checkbox" ${t.completed ? 'checked' : ''} onclick="toggleTask(${t.id})">
+                        <span>${t.text}</span>
+                        <span class="task-tag">${t.subject}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTask(${t.id})">&times;</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const subject = document.getElementById('subjectSelect').value;
+            if(!input.value.trim()) return;
+
+            tasks.push({
+                id: Date.now(),
+                text: input.value,
+                subject: subject,
+                completed: false
+            });
+            input.value = '';
+            renderTasks();
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
+            renderTasks();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            renderTasks();
+        }
+
+        renderTasks();
+
+        // --- SCRATCHPAD AUTO-SAVE ---
+        const scratchpad = document.getElementById('scratchpad');
+        scratchpad.value = localStorage.getItem('stellaris_notes') || '';
+        scratchpad.addEventListener('input', () => {
+            localStorage.setItem('stellaris_notes', scratchpad.value);
+            document.getElementById('footerStatus').innerText = "Notes auto-saved to starlight memory";
+        });
+
+        // --- TAROT FLASHCARDS ---
+        const tarotCards = [
+            { q: "QUESTION I", front: "What is the core principle of stellar quantum superposition?", back: "A quantum system exists in multiple states simultaneously until observed by starlight." },
+            { q: "QUESTION II", front: "Explain the arcana of circadian rhythm synchronization.", back: "Biological alignment with natural lunar and solar cycles for optimal cognitive retention." },
+            { q: "QUESTION III", front: "What defines an active stellar nursery nebula?", back: "A giant molecular cloud of gas and dust where new star formation actively occurs." }
+        ];
+        let tarotIndex = 0;
+        let showingAnswer = false;
+
+        function flipTarotCard() {
+            showingAnswer = !showingAnswer;
+            document.getElementById('tarotPrompt').innerText = showingAnswer ? "WISDOM REVEALED" : tarotCards[tarotIndex].q;
+            document.getElementById('tarotText').innerText = showingAnswer ? tarotCards[tarotIndex].back : tarotCards[tarotIndex].front;
+        }
+
+        function nextTarot() {
+            tarotIndex = (tarotIndex + 1) % tarotCards.length;
+            showingAnswer = false;
+            document.getElementById('tarotPrompt').innerText = tarotCards[tarotIndex].q;
+            document.getElementById('tarotText').innerText = tarotCards[tarotIndex].front;
+        }
+
+        function prevTarot() {
+            tarotIndex = (tarotIndex - 1 + tarotCards.length) % tarotCards.length;
+            showingAnswer = false;
+            document.getElementById('tarotPrompt').innerText = tarotCards[tarotIndex].q;
+            document.getElementById('tarotText').innerText = tarotCards[tarotIndex].front;
+        }
+    </script>
+</body>
+</html>
